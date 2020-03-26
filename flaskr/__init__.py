@@ -33,6 +33,8 @@ def create_app(test_config=None):
             cursor = conn.cursor()
             cursor.execute(
                 'CREATE TABLE IF NOT EXISTS active_device (room_number TEXT, bluetooth_address TEXT, PRIMARY KEY (room_number, bluetooth_address)) WITHOUT ROWID')
+            cursor.execute(
+                'CREATE TABLE IF NOT EXISTS customer_state (bluetooth_address TEXT PRIMARY KEY, state TEXT) WITHOUT ROWID')
             conn.commit()
     except:
         print("Unexpected error:", sys.exc_info())
@@ -68,6 +70,8 @@ def create_app(test_config=None):
                 cursor = conn.cursor()
                 cursor.execute('INSERT OR IGNORE INTO active_device VALUES (?, ?)',
                                (room_number, request.form["bluetooth_address"]))
+                cursor.execute('INSERT OR IGNORE INTO customer_state VALUES (?, ?)',
+                               (request.form["bluetooth_address"], 'CHECK_IN'))
                 conn.commit()
                 cursor.execute(
                     'SELECT room_number, group_concat(bluetooth_address) FROM active_device WHERE room_number = ?', room_number)
@@ -134,6 +138,22 @@ def create_app(test_config=None):
                 'room_numbers': room_numbers.split(',')
             })
 
+    @app.route('/devices/<bluetooth_address>', methods=['PUT'])
+    def update_customer_state(bluetooth_address):
+        try:
+            with create_database_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute(
+                    'UPDATE customer_state SET state = ? WHERE bluetooth_address = ?', (request.form["state"], bluetooth_address))
+                conn.commit()
+        except KeyError:
+            abort(400)
+        except:
+            print("Unexpected error:", sys.exc_info())
+            abort(500)
+        else:
+            return str(cursor.rowcount)
+
     @app.route('/devices/<bluetooth_address>', methods=['DELETE'])
     def disable_device(bluetooth_address):
         try:
@@ -141,6 +161,8 @@ def create_app(test_config=None):
                 cursor = conn.cursor()
                 cursor.execute(
                     'DELETE FROM active_device WHERE bluetooth_address = ?', (bluetooth_address))
+                cursor.execute(
+                    'DELETE FROM customer_state WHERE bluetooth_address = ?', (bluetooth_address))
                 conn.commit()
         except KeyError:
             abort(400)
