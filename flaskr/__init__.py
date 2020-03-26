@@ -119,7 +119,7 @@ def create_app(test_config=None):
             with create_database_connection() as conn:
                 cursor = conn.cursor()
                 cursor.execute(
-                    'SELECT DISTINCT bluetooth_address, state, group_concat(room_number) FROM active_device NATURAL JOIN customer_state WHERE bluetooth_address = ?', (bluetooth_address))
+                    'SELECT bluetooth_address, state, group_concat(room_number) FROM active_device NATURAL JOIN customer_state WHERE bluetooth_address = ?', (bluetooth_address))
                 bluetooth_address, state, room_numbers = cursor.fetchone()
         except:
             print("Unexpected error:", sys.exc_info())
