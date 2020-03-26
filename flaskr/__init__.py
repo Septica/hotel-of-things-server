@@ -50,8 +50,8 @@ def create_app(test_config=None):
             with create_database_connection() as conn:
                 cursor = conn.cursor()
                 cursor.execute(
-                    'SELECT room_number, group_concat(bluetooth_address) FROM active_device WHERE room_number = ?', (room_number))
-                room_number, bluetooth_addresses = cursor.fetchone()
+                    'SELECT room_number, group_concat(bluetooth_address), group_concat(state) FROM active_device NATURAL JOIN customer_state WHERE room_number = ?', room_number)
+                room_number, bluetooth_addresses, states = cursor.fetchone()
         except:
             print("Unexpected error:", sys.exc_info())
             abort(500)
@@ -60,7 +60,7 @@ def create_app(test_config=None):
                 abort(404)
             return jsonify({
                 'room_number': room_number,
-                'bluetooth_addresses': bluetooth_addresses.split(',')
+                "devices": list(zip(bluetooth_addresses.split(","), states.split(',')))
             })
 
     @app.route('/rooms/<room_number>', methods=['POST'])
@@ -71,21 +71,15 @@ def create_app(test_config=None):
                 cursor.execute('INSERT OR IGNORE INTO active_device VALUES (?, ?)',
                                (room_number, request.form["bluetooth_address"]))
                 cursor.execute('INSERT OR IGNORE INTO customer_state VALUES (?, ?)',
-                               (request.form["bluetooth_address"], 'CHECK_IN'))
+                               (request.form["bluetooth_address"], 'CHECKED_IN'))
                 conn.commit()
-                cursor.execute(
-                    'SELECT room_number, group_concat(bluetooth_address) FROM active_device WHERE room_number = ?', room_number)
-                room_number, bluetooth_addresses = cursor.fetchone()
         except KeyError:
             abort(400)
         except:
             print("Unexpected error:", sys.exc_info())
             abort(500)
         else:
-            return jsonify({
-                "room_number": room_number,
-                "bluetooth_addresses": bluetooth_addresses.split(",")
-            })
+            return get_room_details(room_number)
 
     @app.route('/rooms/<room_number>', methods=['DELETE'])
     def disconnect_all_devices_from_a_room(room_number):
@@ -125,8 +119,8 @@ def create_app(test_config=None):
             with create_database_connection() as conn:
                 cursor = conn.cursor()
                 cursor.execute(
-                    'SELECT bluetooth_address, group_concat(room_number) FROM active_device WHERE bluetooth_address = ?', (bluetooth_address))
-                bluetooth_address, room_numbers = cursor.fetchone()
+                    'SELECT DISTINCT bluetooth_address, state, group_concat(room_number) FROM active_device NATURAL JOIN customer_state WHERE bluetooth_address = ?', (bluetooth_address))
+                bluetooth_address, state, room_numbers = cursor.fetchone()
         except:
             print("Unexpected error:", sys.exc_info())
             abort(500)
@@ -135,6 +129,7 @@ def create_app(test_config=None):
                 abort(404)
             return jsonify({
                 'bluetooth_address': bluetooth_address,
+                'state': state,
                 'room_numbers': room_numbers.split(',')
             })
 
@@ -152,7 +147,7 @@ def create_app(test_config=None):
             print("Unexpected error:", sys.exc_info())
             abort(500)
         else:
-            return str(cursor.rowcount)
+            return get_device_details(bluetooth_address)
 
     @app.route('/devices/<bluetooth_address>', methods=['DELETE'])
     def disable_device(bluetooth_address):
