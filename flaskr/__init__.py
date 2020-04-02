@@ -3,7 +3,7 @@ import os
 from operator import itemgetter
 import sqlite3
 
-from flask import Flask, request, abort, jsonify
+from flask import Flask, request, abort, jsonify, send_from_directory
 
 
 def create_app(test_config=None):
@@ -26,11 +26,13 @@ def create_app(test_config=None):
         pass
 
     def create_database_connection():
-        return sqlite3.connect(app.config["DATABASE"])
+        return sqlite3.connect(app.config['DATABASE'])
 
     try:
         with create_database_connection() as conn:
             cursor = conn.cursor()
+            cursor.execute(
+                'CREATE TABLE IF NOT EXISTS room (room_number TEXT PRIMARY KEY) WITHOUT ROWID')
             cursor.execute(
                 'CREATE TABLE IF NOT EXISTS active_device (room_number TEXT, bluetooth_address TEXT, PRIMARY KEY (room_number, bluetooth_address)) WITHOUT ROWID')
             cursor.execute(
@@ -44,13 +46,43 @@ def create_app(test_config=None):
     def ping():
         return ''
 
+    @app.route('/rooms', methods=['GET'])
+    def get_all_rooms():
+        try:
+            with create_database_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute('SELECT group_concat(room_number) FROM room')
+                rooms, = cursor.fetchone()
+        except:
+            print("Unexpected error:", sys.exc_info())
+            abort(500)
+        else:
+            return jsonify(rooms.split(','))
+
+    @app.route('/rooms', methods=['PUT'])
+    def create_new_room():
+        try:
+            room_number = request.form['room_number']
+            with create_database_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute(
+                    'INSERT OR IGNORE INTO room VALUES (?)', (room_number))
+                conn.commit()
+        except KeyError:
+            abort(400)
+        except:
+            print("Unexpected error:", sys.exc_info())
+            abort(500)
+        else:
+            return get_all_rooms()
+
     @app.route('/rooms/<room_number>', methods=['GET'])
     def get_room_details(room_number):
         try:
             with create_database_connection() as conn:
                 cursor = conn.cursor()
                 cursor.execute(
-                    'SELECT room_number, group_concat(bluetooth_address), group_concat(state) FROM active_device NATURAL JOIN customer_state WHERE room_number = ?', room_number)
+                    'SELECT room_number, group_concat(bluetooth_address), group_concat(state) FROM room NATURAL LEFT OUTER JOIN active_device NATURAL LEFT OUTER JOIN customer_state WHERE room_number = ?', room_number)
                 room_number, bluetooth_addresses, states = cursor.fetchone()
         except:
             print("Unexpected error:", sys.exc_info())
@@ -60,18 +92,19 @@ def create_app(test_config=None):
                 abort(404)
             return jsonify({
                 'room_number': room_number,
-                "devices": list(zip(bluetooth_addresses.split(","), states.split(',')))
+                'devices': list(zip(bluetooth_addresses.split(','), states.split(','))) if bluetooth_addresses is not None else []
             })
 
-    @app.route('/rooms/<room_number>', methods=['POST'])
+    @app.route('/rooms/<room_number>/devices', methods=['PUT'])
     def connect_device_to_a_room(room_number):
         try:
+            bluetooth_address = request.form['bluetooth_address']
             with create_database_connection() as conn:
                 cursor = conn.cursor()
                 cursor.execute('INSERT OR IGNORE INTO active_device VALUES (?, ?)',
-                               (room_number, request.form["bluetooth_address"]))
+                               (room_number, bluetooth_address))
                 cursor.execute('INSERT OR IGNORE INTO customer_state VALUES (?, ?)',
-                               (request.form["bluetooth_address"], 'CHECKED_IN'))
+                               (bluetooth_address, 'CHECKED_IN'))
                 conn.commit()
         except KeyError:
             abort(400)
@@ -81,7 +114,7 @@ def create_app(test_config=None):
         else:
             return get_room_details(room_number)
 
-    @app.route('/rooms/<room_number>', methods=['DELETE'])
+    @app.route('/rooms/<room_number>/devices', methods=['DELETE'])
     def disconnect_all_devices_from_a_room(room_number):
         try:
             with create_database_connection() as conn:
@@ -95,9 +128,9 @@ def create_app(test_config=None):
             print("Unexpected error:", sys.exc_info())
             abort(500)
         else:
-            return str(cursor.rowcount)
+            return get_room_details(room_number)
 
-    @app.route('/rooms/<room_number>/<bluetooth_address>', methods=['DELETE'])
+    @app.route('/rooms/<room_number>/devices/<bluetooth_address>', methods=['DELETE'])
     def disconnect_device_from_a_room(room_number, bluetooth_address):
         try:
             with create_database_connection() as conn:
@@ -111,7 +144,7 @@ def create_app(test_config=None):
             print("Unexpected error:", sys.exc_info())
             abort(500)
         else:
-            return str(cursor.rowcount)
+            return get_room_details(room_number)
 
     @app.route('/devices/<bluetooth_address>', methods=['GET'])
     def get_device_details(bluetooth_address):
@@ -136,10 +169,11 @@ def create_app(test_config=None):
     @app.route('/devices/<bluetooth_address>', methods=['PUT'])
     def update_customer_state(bluetooth_address):
         try:
+            state = request.form['state']
             with create_database_connection() as conn:
                 cursor = conn.cursor()
                 cursor.execute(
-                    'UPDATE customer_state SET state = ? WHERE bluetooth_address = ?', (request.form["state"], bluetooth_address))
+                    'UPDATE customer_state SET state = ? WHERE bluetooth_address = ?', (state, bluetooth_address))
                 conn.commit()
         except KeyError:
             abort(400)
@@ -166,5 +200,9 @@ def create_app(test_config=None):
             abort(500)
         else:
             return str(cursor.rowcount)
+
+    @app.route('/admin', methods=['GET'])
+    def get_admin_page():
+        return send_from_directory('static', 'admin.html')
 
     return app

@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel</title>
+</head>
+<body>
+    <h1>Rooms</h1>
+    <ul id="room-list"></ul>
+    <form onsubmit="createNewRoom(event)">
+        <input name="room_number" />
+        <button>Create New Room</button>
+    </form>
+    <div id="room-details"></div>
+    <script>
+        window.onload = getAllRooms;
+
+        const detailEl = document.getElementById('room-details');
+        const roomList = document.getElementById('room-list');
+
+        async function getAllRooms() {
+            const response = await fetch('/rooms');
+
+            updateRoomList(await response.json());
+        }
+
+        async function createNewRoom(event) {
+            event.preventDefault();
+
+            const formData = new FormData(event.target);
+            const response = await fetch('/rooms', {
+                method: 'PUT',
+                body: new URLSearchParams(formData)
+            });
+
+            updateRoomList(await response.json());
+        }
+
+        function updateRoomList(rooms) {
+            roomList.innerHTML = rooms.reduce((accumulator, room_number) => accumulator += `<li onclick="getRoomDetails('${room_number}')">${room_number}</li>`, '');
+        }
+
+        async function getRoomDetails(roomNumber) {
+            const response = await fetch(`/rooms/${roomNumber}`);
+
+            updateRoomDetails(await response.json())
+        }
+
+        async function connectDeviceToARoom(roomNumber, event) {
+            event.preventDefault();
+
+            const formData = new FormData(event.target);
+            const response = await fetch(`/rooms/${roomNumber}/devices`, {
+                method: 'PUT',
+                body: new URLSearchParams(formData)
+            });
+
+            updateRoomDetails(await response.json())
+        }
+
+        async function disconnectAllDevicesFromARoom(roomNumber) {
+            const response = await fetch(`/rooms/${roomNumber}/devices`, {
+                method: 'DELETE'
+            });
+
+            updateRoomDetails(await response.json())
+        }
+
+        async function disconnectDeviceFromARoom(room_number, bluetoothAddress) {
+            const response = await fetch(`/rooms/${room_number}/devices/${bluetoothAddress}`, {
+                method: 'DELETE'
+            });
+
+            updateRoomDetails(await response.json())
+        }
+
+        function updateRoomDetails({ room_number, devices }) {
+            detailEl.innerHTML = `
+                <h1>${room_number}</h1>
+                <button onclick="disconnectAllDevicesFromARoom('${room_number}')">Disconnect All</button>
+                <ul>
+                    ${devices.reduce((accumulator, [bluetoothAddress, state]) => accumulator += `
+                        <li>
+                            <span>${bluetoothAddress}</span>
+                            <span>${state}</span>
+                            <button onclick="disconnectDeviceFromARoom('${room_number}', '${bluetoothAddress}')">Disconnect</button>
+                        </li>
+                    `, '')}
+                </ul>
+                <form onsubmit="connectDeviceToARoom('${room_number}', event)">
+                    <input name="bluetooth_address" />
+                    <button>Connect New Device</button>
+                </form>
+            `;
+        }
+    </script>
+</body>
+</html>
