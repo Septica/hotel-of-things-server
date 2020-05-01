@@ -12,13 +12,15 @@ async function getAllRooms() {
 async function createNewRoom(event) {
     event.preventDefault();
 
-    const formData = new FormData(event.target);
+    const formEl = event.target;
+    const formData = new FormData(formEl);
     const response = await fetch('/rooms', {
         method: 'PUT',
         body: new URLSearchParams(formData)
     });
 
     updateRoomList(await response.json());
+    formEl.reset()
 }
 
 async function deleteRoom(roomNumber) {
@@ -43,13 +45,15 @@ async function getRoomDetails(roomNumber) {
 async function connectDeviceToARoom(roomNumber, event) {
     event.preventDefault();
 
-    const formData = new FormData(event.target);
+    const formEl = event.target;
+    const formData = new FormData(formEl);
     const response = await fetch(`/rooms/${roomNumber}/devices`, {
         method: 'PUT',
         body: new URLSearchParams(formData)
     });
 
     updateRoomDetails(await response.json());
+    formEl.reset()
 }
 
 async function disconnectAllDevicesFromARoom(roomNumber) {
