@@ -66,7 +66,7 @@ def create_app(test_config=None):
             with create_database_connection() as conn:
                 cursor = conn.cursor()
                 cursor.execute(
-                    'INSERT OR IGNORE INTO room VALUES (?)', (room_number))
+                    'INSERT OR IGNORE INTO room VALUES (?)', (room_number,))
                 conn.commit()
         except KeyError:
             abort(400)
@@ -82,7 +82,7 @@ def create_app(test_config=None):
             with create_database_connection() as conn:
                 cursor = conn.cursor()
                 cursor.execute(
-                    'SELECT room_number, group_concat(bluetooth_address), group_concat(state) FROM room NATURAL LEFT OUTER JOIN active_device NATURAL LEFT OUTER JOIN customer_state WHERE room_number = ?', room_number)
+                    'SELECT room_number, group_concat(bluetooth_address), group_concat(state) FROM room NATURAL LEFT OUTER JOIN active_device NATURAL LEFT OUTER JOIN customer_state WHERE room_number = ?', (room_number,))
                 room_number, bluetooth_addresses, states = cursor.fetchone()
         except:
             print("Unexpected error:", sys.exc_info())
@@ -102,9 +102,9 @@ def create_app(test_config=None):
             with create_database_connection() as conn:
                 cursor = conn.cursor()
                 cursor.execute('INSERT OR IGNORE INTO active_device VALUES (?, ?)',
-                               (room_number, bluetooth_address))
+                               (room_number, bluetooth_address,))
                 cursor.execute('INSERT OR IGNORE INTO customer_state VALUES (?, ?)',
-                               (bluetooth_address, 'CHECKED_IN'))
+                               (bluetooth_address, 'CHECKED_IN',))
                 conn.commit()
         except KeyError:
             abort(400)
@@ -120,7 +120,7 @@ def create_app(test_config=None):
             with create_database_connection() as conn:
                 cursor = conn.cursor()
                 cursor.execute(
-                    'DELETE FROM active_device WHERE room_number = ?', (room_number))
+                    'DELETE FROM active_device WHERE room_number = ?', (room_number,))
                 conn.commit()
         except KeyError:
             abort(400)
@@ -136,7 +136,7 @@ def create_app(test_config=None):
             with create_database_connection() as conn:
                 cursor = conn.cursor()
                 cursor.execute(
-                    'DELETE FROM active_device WHERE room_number = ? AND bluetooth_address = ?', (room_number, bluetooth_address))
+                    'DELETE FROM active_device WHERE room_number = ? AND bluetooth_address = ?', (room_number, bluetooth_address,))
                 conn.commit()
         except KeyError:
             abort(400)
@@ -152,7 +152,7 @@ def create_app(test_config=None):
             with create_database_connection() as conn:
                 cursor = conn.cursor()
                 cursor.execute(
-                    'SELECT bluetooth_address, state, group_concat(room_number) FROM active_device NATURAL JOIN customer_state WHERE bluetooth_address = ?', (bluetooth_address))
+                    'SELECT bluetooth_address, state, group_concat(room_number) FROM active_device NATURAL JOIN customer_state WHERE bluetooth_address = ?', (bluetooth_address,))
                 bluetooth_address, state, room_numbers = cursor.fetchone()
         except:
             print("Unexpected error:", sys.exc_info())
@@ -173,7 +173,7 @@ def create_app(test_config=None):
             with create_database_connection() as conn:
                 cursor = conn.cursor()
                 cursor.execute(
-                    'UPDATE customer_state SET state = ? WHERE bluetooth_address = ?', (state, bluetooth_address))
+                    'UPDATE customer_state SET state = ? WHERE bluetooth_address = ?', (state, bluetooth_address,))
                 conn.commit()
         except KeyError:
             abort(400)
@@ -189,9 +189,9 @@ def create_app(test_config=None):
             with create_database_connection() as conn:
                 cursor = conn.cursor()
                 cursor.execute(
-                    'DELETE FROM active_device WHERE bluetooth_address = ?', (bluetooth_address))
+                    'DELETE FROM active_device WHERE bluetooth_address = ?', (bluetooth_address,))
                 cursor.execute(
-                    'DELETE FROM customer_state WHERE bluetooth_address = ?', (bluetooth_address))
+                    'DELETE FROM customer_state WHERE bluetooth_address = ?', (bluetooth_address,))
                 conn.commit()
         except KeyError:
             abort(400)
