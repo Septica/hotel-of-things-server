@@ -53,7 +53,7 @@
         async function getRoomDetails(roomNumber) {
             const response = await fetch(`/rooms/${roomNumber}`);
 
-            updateRoomDetails(await response.json())
+            updateRoomDetails(await response.json());
         }
 
         async function connectDeviceToARoom(roomNumber, event) {
@@ -65,7 +65,7 @@
                 body: new URLSearchParams(formData)
             });
 
-            updateRoomDetails(await response.json())
+            updateRoomDetails(await response.json());
         }
 
         async function disconnectAllDevicesFromARoom(roomNumber) {
@@ -73,7 +73,7 @@
                 method: 'DELETE'
             });
 
-            updateRoomDetails(await response.json())
+            updateRoomDetails(await response.json());
         }
 
         async function disconnectDeviceFromARoom(room_number, bluetoothAddress) {
@@ -81,7 +81,7 @@
                 method: 'DELETE'
             });
 
-            updateRoomDetails(await response.json())
+            updateRoomDetails(await response.json());
         }
 
         function updateRoomDetails({ room_number, devices }) {
