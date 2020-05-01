@@ -34,9 +34,9 @@ def create_app(test_config=None):
             cursor.execute(
                 'CREATE TABLE IF NOT EXISTS room (room_number TEXT PRIMARY KEY) WITHOUT ROWID')
             cursor.execute(
-                'CREATE TABLE IF NOT EXISTS active_device (room_number TEXT, bluetooth_address TEXT, PRIMARY KEY (room_number, bluetooth_address)) WITHOUT ROWID')
+                'CREATE TABLE IF NOT EXISTS active_device (room_number TEXT, mac_address TEXT, PRIMARY KEY (room_number, mac_address)) WITHOUT ROWID')
             cursor.execute(
-                'CREATE TABLE IF NOT EXISTS customer_state (bluetooth_address TEXT PRIMARY KEY, state TEXT) WITHOUT ROWID')
+                'CREATE TABLE IF NOT EXISTS customer_state (mac_address TEXT PRIMARY KEY, state TEXT) WITHOUT ROWID')
             conn.commit()
     except:
         print("Unexpected error:", sys.exc_info())
@@ -97,8 +97,8 @@ def create_app(test_config=None):
             with create_database_connection() as conn:
                 cursor = conn.cursor()
                 cursor.execute(
-                    'SELECT room_number, group_concat(bluetooth_address), group_concat(state) FROM room NATURAL LEFT OUTER JOIN active_device NATURAL LEFT OUTER JOIN customer_state WHERE room_number = ?', (room_number,))
-                room_number, bluetooth_addresses, states = cursor.fetchone()
+                    'SELECT room_number, group_concat(mac_address), group_concat(state) FROM room NATURAL LEFT OUTER JOIN active_device NATURAL LEFT OUTER JOIN customer_state WHERE room_number = ?', (room_number,))
+                room_number, mac_addresses, states = cursor.fetchone()
         except:
             print("Unexpected error:", sys.exc_info())
             abort(500)
@@ -107,19 +107,19 @@ def create_app(test_config=None):
                 abort(404)
             return jsonify({
                 'room_number': room_number,
-                'devices': list(zip(bluetooth_addresses.split(','), states.split(','))) if bluetooth_addresses is not None else []
+                'devices': list(zip(mac_addresses.split(','), states.split(','))) if mac_addresses is not None else []
             })
 
     @app.route('/rooms/<room_number>/devices', methods=['PUT'])
     def connect_device_to_a_room(room_number):
         try:
-            bluetooth_address = request.form['bluetooth_address']
+            mac_address = request.form['mac_address']
             with create_database_connection() as conn:
                 cursor = conn.cursor()
                 cursor.execute('INSERT OR IGNORE INTO active_device VALUES (?, ?)',
-                               (room_number, bluetooth_address,))
+                               (room_number, mac_address,))
                 cursor.execute('INSERT OR IGNORE INTO customer_state VALUES (?, ?)',
-                               (bluetooth_address, 'CHECKED_IN',))
+                               (mac_address, 'CHECKED_IN',))
                 conn.commit()
         except KeyError:
             abort(400)
@@ -145,13 +145,13 @@ def create_app(test_config=None):
         else:
             return get_room_details(room_number)
 
-    @app.route('/rooms/<room_number>/devices/<bluetooth_address>', methods=['DELETE'])
-    def disconnect_device_from_a_room(room_number, bluetooth_address):
+    @app.route('/rooms/<room_number>/devices/<mac_address>', methods=['DELETE'])
+    def disconnect_device_from_a_room(room_number, mac_address):
         try:
             with create_database_connection() as conn:
                 cursor = conn.cursor()
                 cursor.execute(
-                    'DELETE FROM active_device WHERE room_number = ? AND bluetooth_address = ?', (room_number, bluetooth_address,))
+                    'DELETE FROM active_device WHERE room_number = ? AND mac_address = ?', (room_number, mac_address,))
                 conn.commit()
         except KeyError:
             abort(400)
@@ -161,34 +161,34 @@ def create_app(test_config=None):
         else:
             return get_room_details(room_number)
 
-    @app.route('/devices/<bluetooth_address>', methods=['GET'])
-    def get_device_details(bluetooth_address):
+    @app.route('/devices/<mac_address>', methods=['GET'])
+    def get_device_details(mac_address):
         try:
             with create_database_connection() as conn:
                 cursor = conn.cursor()
                 cursor.execute(
-                    'SELECT bluetooth_address, state, group_concat(room_number) FROM active_device NATURAL JOIN customer_state WHERE bluetooth_address = ?', (bluetooth_address,))
-                bluetooth_address, state, room_numbers = cursor.fetchone()
+                    'SELECT mac_address, state, group_concat(room_number) FROM active_device NATURAL JOIN customer_state WHERE mac_address = ?', (mac_address,))
+                mac_address, state, room_numbers = cursor.fetchone()
         except:
             print("Unexpected error:", sys.exc_info())
             abort(500)
         else:
-            if bluetooth_address is None:
+            if mac_address is None:
                 abort(404)
             return jsonify({
-                'bluetooth_address': bluetooth_address,
+                'mac_address': mac_address,
                 'state': state,
                 'room_numbers': room_numbers.split(',')
             })
 
-    @app.route('/devices/<bluetooth_address>', methods=['PUT'])
-    def update_customer_state(bluetooth_address):
+    @app.route('/devices/<mac_address>', methods=['PUT'])
+    def update_customer_state(mac_address):
         try:
             state = request.form['state']
             with create_database_connection() as conn:
                 cursor = conn.cursor()
                 cursor.execute(
-                    'UPDATE customer_state SET state = ? WHERE bluetooth_address = ?', (state, bluetooth_address,))
+                    'UPDATE customer_state SET state = ? WHERE mac_address = ?', (state, mac_address,))
                 conn.commit()
         except KeyError:
             abort(400)
@@ -196,17 +196,17 @@ def create_app(test_config=None):
             print("Unexpected error:", sys.exc_info())
             abort(500)
         else:
-            return get_device_details(bluetooth_address)
+            return get_device_details(mac_address)
 
-    @app.route('/devices/<bluetooth_address>', methods=['DELETE'])
-    def disable_device(bluetooth_address):
+    @app.route('/devices/<mac_address>', methods=['DELETE'])
+    def disable_device(mac_address):
         try:
             with create_database_connection() as conn:
                 cursor = conn.cursor()
                 cursor.execute(
-                    'DELETE FROM active_device WHERE bluetooth_address = ?', (bluetooth_address,))
+                    'DELETE FROM active_device WHERE mac_address = ?', (mac_address,))
                 cursor.execute(
-                    'DELETE FROM customer_state WHERE bluetooth_address = ?', (bluetooth_address,))
+                    'DELETE FROM customer_state WHERE mac_address = ?', (mac_address,))
                 conn.commit()
         except KeyError:
             abort(400)

@@ -76,8 +76,8 @@
             updateRoomDetails(await response.json());
         }
 
-        async function disconnectDeviceFromARoom(room_number, bluetoothAddress) {
-            const response = await fetch(`/rooms/${room_number}/devices/${bluetoothAddress}`, {
+        async function disconnectDeviceFromARoom(room_number, macAddress) {
+            const response = await fetch(`/rooms/${room_number}/devices/${macAddress}`, {
                 method: 'DELETE'
             });
 
@@ -90,16 +90,16 @@
                 <button onclick="deleteRoom('${room_number}')")>Delete Room</button>
                 <button onclick="disconnectAllDevicesFromARoom('${room_number}')">Disconnect All</button>
                 <ul>
-                    ${devices.reduce((accumulator, [bluetoothAddress, state]) => accumulator += `
+                    ${devices.reduce((accumulator, [macAddress, state]) => accumulator += `
                         <li>
-                            <span>${bluetoothAddress}</span>
+                            <span>${macAddress}</span>
                             <span>${state}</span>
-                            <button onclick="disconnectDeviceFromARoom('${room_number}', '${bluetoothAddress}')">Disconnect</button>
+                            <button onclick="disconnectDeviceFromARoom('${room_number}', '${macAddress}')">Disconnect</button>
                         </li>
                     `, '')}
                 </ul>
                 <form onsubmit="connectDeviceToARoom('${room_number}', event)">
-                    <input name="bluetooth_address" />
+                    <input name="mac_address" />
                     <button>Connect New Device</button>
                 </form>
             `;
