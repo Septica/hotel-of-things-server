@@ -76,6 +76,21 @@ def create_app(test_config=None):
         else:
             return get_all_rooms()
 
+    @app.route('/rooms/<room_number>', methods=['DELETE'])
+    def delete_room(room_number):
+        try:
+            with create_database_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute(
+                    'DELETE FROM active_device WHERE room_number = ?', (room_number,))
+                cursor.execute('DELETE FROM room WHERE room_number = ?', (room_number,))
+                conn.commit()
+        except:
+            print("Unexpected error:", sys.exc_info())
+            abort(500)
+        else:
+            return get_all_rooms()
+
     @app.route('/rooms/<room_number>', methods=['GET'])
     def get_room_details(room_number):
         try:

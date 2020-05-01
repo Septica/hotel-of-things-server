@@ -37,6 +37,15 @@
             updateRoomList(await response.json());
         }
 
+        async function deleteRoom(roomNumber) {
+            const response = await fetch(`/rooms/${roomNumber}`, {
+                method: 'DELETE'
+            });
+
+            updateRoomList(await response.json());
+            detailEl.innerHTML = '';
+        }
+
         function updateRoomList(rooms) {
             roomList.innerHTML = rooms.reduce((accumulator, room_number) => accumulator += `<li onclick="getRoomDetails('${room_number}')">${room_number}</li>`, '');
         }
@@ -78,6 +87,7 @@
         function updateRoomDetails({ room_number, devices }) {
             detailEl.innerHTML = `
                 <h1>${room_number}</h1>
+                <button onclick="deleteRoom('${room_number}')")>Delete Room</button>
                 <button onclick="disconnectAllDevicesFromARoom('${room_number}')">Disconnect All</button>
                 <ul>
                     ${devices.reduce((accumulator, [bluetoothAddress, state]) => accumulator += `
