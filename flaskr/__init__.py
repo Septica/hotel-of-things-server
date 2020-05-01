@@ -57,7 +57,7 @@ def create_app(test_config=None):
             print("Unexpected error:", sys.exc_info())
             abort(500)
         else:
-            return jsonify(rooms.split(','))
+            return jsonify(rooms.split(',')) if rooms is not None else []
 
     @app.route('/rooms', methods=['PUT'])
     def create_new_room():
