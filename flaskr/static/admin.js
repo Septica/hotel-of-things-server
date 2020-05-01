@@ -30,11 +30,18 @@ async function deleteRoom(roomNumber) {
     });
 
     updateRoomList(await response.json());
-    detailEl.innerHTML = '';
+    closeEdit();
 }
 
 function updateRoomList(rooms) {
-    roomList.innerHTML = rooms.reduce((accumulator, room_number) => accumulator += `<tr><th scope="row">${room_number}</th><td><i class="mdi mdi-pencil edit-button" onclick="getRoomDetails('${room_number}')"></i></td></tr>`, '');
+    roomList.innerHTML = rooms.reduce((accumulator, room_number) => accumulator += `
+        <tr>
+            <th scope="row">${room_number}</th>
+            <td>
+                <i class="mdi mdi-pencil edit-button" onclick="getRoomDetails('${room_number}')"></i>
+            </td>
+        </tr>
+    `, '');
 }
 
 async function getRoomDetails(roomNumber) {
@@ -74,9 +81,8 @@ async function disconnectDeviceFromARoom(room_number, macAddress) {
 }
 
 function closeEdit() {
-    console.log("helloo")
-    blackBackground.classList.remove('black-background--show')
-    detailEl.innerHTML=``
+    blackBackground.classList.remove('black-background--show');
+    detailEl.innerHTML = '';
 }
 
 function updateRoomDetails({ room_number, devices }) {
