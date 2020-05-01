@@ -220,5 +220,9 @@ def create_app(test_config=None):
     @app.route('/admin', methods=['GET'])
     def get_admin_page():
         return send_from_directory('static', 'admin.html')
+    
+    @app.route('/checkin', methods=['GET'])
+    def get_checkin_page():
+        return send_from_directory('static', 'checkin.html')
 
     return app
