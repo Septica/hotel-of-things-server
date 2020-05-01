@@ -83,7 +83,8 @@ def create_app(test_config=None):
                 cursor = conn.cursor()
                 cursor.execute(
                     'DELETE FROM active_device WHERE room_number = ?', (room_number,))
-                cursor.execute('DELETE FROM room WHERE room_number = ?', (room_number,))
+                cursor.execute(
+                    'DELETE FROM room WHERE room_number = ?', (room_number,))
                 conn.commit()
         except:
             print("Unexpected error:", sys.exc_info())
