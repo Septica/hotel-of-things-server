@@ -159,6 +159,9 @@ def create_app(test_config=None):
                 cursor.execute(
                     'DELETE FROM active_device WHERE room_number = ? AND mac_address = ?', (room_number, mac_address,))
                 conn.commit()
+            producer = KafkaProducer(value_serializer=lambda v: json.dumps(v).encode('utf-8'), key_serializer=str.encode)
+            producer.send(str(room_number), { 'type': 'DISCONNECT', 'mac_address': mac_address }, mac_address)
+            producer.flush()
         except KeyError:
             abort(400)
         except:
