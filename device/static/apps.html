@@ -34,6 +34,15 @@
         }
         var draw
 
+        function postServer(nextState) {
+            var xhr = new XMLHttpRequest();
+            xhr.open("POST", 'http://127.0.0.1:5000/', true)
+            xhr.setRequestHeader('Content-Type', 'application/json');
+            xhr.send(JSON.stringify({
+                state: nextState
+            }));
+        }
+
         function startSleeping() {
             init();
             clearInterval(draw)
@@ -41,16 +50,19 @@
             sleep(3000)
                 .then(() => {
                     changeState("Start Sleeping", "Light Sleep..ZzZ")
+                    postServer('light_sleep')
                 })
                 .then(() => {
                     sleep(5000)
                         .then(() => {
                             changeState("Light Sleep..ZzZ", "In Deep Sleep")
+                            postServer('deep_sleep')
                         })
                         .then(() => {
                             sleep(8000)
                                 .then(() => {
                                     changeState("In Deep Sleep", "Start Sleeping");
+                                    postServer('awake')
                             })
                         })
                 })

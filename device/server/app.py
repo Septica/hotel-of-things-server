@@ -1,7 +1,9 @@
 import requests
 from flask import Flask, jsonify, request
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app)
 
 STATE_ENUM = {"deep_sleep", "light_sleep", "awake"}
 
@@ -13,7 +15,7 @@ def change_sleep_state():
         })
     state = request.json['state']
     # Call function to change state in device here
-
+    print(state)
     return jsonify({
         "success": True
     })
