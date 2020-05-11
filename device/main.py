@@ -27,17 +27,16 @@ while True:
         if(arduino_input == "D"):
             print("DOOR UNLOCK")
             arduino.write("U".encode())
-            arduino_input == "0"
         elif(arduino_input == "H"):
             print("AC Higher")
             arduino.write("H".encode())
-            arduino_input == "0"
         elif(arduino_input == "L"):
             print("AC LOWER")
             arduino.write("L".encode())
-            arduino_input == "0"
         elif(arduino_input == "F"):
             print("Lamp Off")
             arduino.write("F".encode())
-            arduino_input == "0"
+        elif(arduino_input == "T"):
+            print("Lamp ON")
+            arduino.write("T".encode())
     

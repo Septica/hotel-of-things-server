@@ -45,10 +45,12 @@ void loop()
       acPower = acPower - 1;
     }else if(input == 'F'){
       lampState = LOW;
+    }else if(input == 'T'){
+      lampState = HIGH;
     }
   }
   int newButtonState = digitalRead(buttonPin);
-  if (newButtonState!= buttonState){
+  if (newButtonState != buttonState){
     buttonState = newButtonState;
     if(buttonState == HIGH) {
        Serial.println('D');
