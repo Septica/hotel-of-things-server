@@ -2,8 +2,10 @@ import sys
 import os
 from operator import itemgetter
 import sqlite3
+import json
 
 from flask import Flask, request, abort, jsonify, send_from_directory
+from kafka import KafkaProducer
 
 
 def create_app(test_config=None):
@@ -122,6 +124,9 @@ def create_app(test_config=None):
                 cursor.execute('INSERT OR IGNORE INTO customer_state VALUES (?, ?)',
                                (mac_address, 'CHECKED_IN',))
                 conn.commit()
+            producer = KafkaProducer(value_serializer=lambda v: json.dumps(v).encode('utf-8'), key_serializer=str.encode)
+            producer.send(str(room_number), { 'type': 'CONNECT', 'mac_address': mac_address }, mac_address)
+            producer.flush()
         except KeyError:
             abort(400)
         except:
