@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Room Control</title>
+    <link rel="stylesheet" href="https://cdn.materialdesignicons.com/2.5.94/css/materialdesignicons.min.css">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark justify-content-between">
+        <a class="navbar-brand" href="#">Hotel Of Things</a>
+        <a class="text-light">Hi, Ayrton</a>
+    </nav>
+    <div class="row">
+        <img width="500" class="rounded mx-auto d-block" src="sleep.png">
+    </div>
+    <div class="row">
+        <div class="col-6 offset-3 text-center">
+            <button type="button" id="sleep" class="btn btn-lg btn-primary" onclick="startSleeping()">Start Sleeping</button>
+        </div>
+    </div>
+    <script>
+    function sleep(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    function startSleeping(){
+        let currentState = "Start Sleeping"
+        sleep(3000)
+        .then(() => {
+            changeState(currentState, "Light Sleep..ZzZ")
+        })
+        .then(() => {
+            sleep(5000)
+            .then(() => {changeState(currentState, "In Deep Sleep")})
+            .then(() => {
+                sleep(6000)
+                .then(() => (changeState("Sleep", "Start Sleeping")))
+            })
+        })
+    }
+
+    function changeState(prevState, nextState){
+        let col = document.getElementById("sleep")
+        if (prevState == "Start Sleeping") {
+            col.classList.remove("btn-primary")
+            col.classList.add("btn-dark")
+            col.classList.add("disabled")
+        } else {
+            col.classList.remove("disabled")
+            col.classList.remove("btn-dark")
+            col.classList.add("btn-primary")
+        }
+        col.innerHTML =  nextState
+    }
+    </script>
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+</body>
+</html>
