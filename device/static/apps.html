@@ -26,17 +26,16 @@
     }
 
     function startSleeping(){
-        let currentState = "Start Sleeping"
         sleep(3000)
         .then(() => {
-            changeState(currentState, "Light Sleep..ZzZ")
+            changeState("Start Sleeping", "Light Sleep..ZzZ")
         })
         .then(() => {
             sleep(5000)
-            .then(() => {changeState(currentState, "In Deep Sleep")})
+            .then(() => {changeState("Light Sleep..ZzZ", "In Deep Sleep")})
             .then(() => {
-                sleep(6000)
-                .then(() => (changeState("Sleep", "Start Sleeping")))
+                sleep(8000)
+                .then(() => (changeState("In Deep Sleep", "Start Sleeping")))
             })
         })
     }
@@ -46,8 +45,9 @@
         if (prevState == "Start Sleeping") {
             col.classList.remove("btn-primary")
             col.classList.add("btn-dark")
+        } else if (prevState == "Light Sleep..ZzZ") {
             col.classList.add("disabled")
-        } else {
+        } else if (prevState == "In Deep Sleep"){
             col.classList.remove("disabled")
             col.classList.remove("btn-dark")
             col.classList.add("btn-primary")
