@@ -5,7 +5,7 @@ import sqlite3
 import json
 
 from flask import Flask, request, abort, jsonify, send_from_directory
-from confluent_kafka import Producer
+from kafka import KafkaProducer
 
 
 def create_app(test_config=None):
@@ -45,13 +45,7 @@ def create_app(test_config=None):
         sys.exit(1)
 
     conf = {
-        'bootstrap.servers': os.environ['CLOUDKARAFKA_BROKERS'],
-        'session.timeout.ms': 6000,
-        'default.topic.config': {'auto.offset.reset': 'smallest'},
-        'security.protocol': 'SASL_SSL',
-	    'sasl.mechanisms': 'SCRAM-SHA-256',
-        'sasl.username': os.environ['CLOUDKARAFKA_USERNAME'],
-        'sasl.password': os.environ['CLOUDKARAFKA_PASSWORD']
+        'bootstrap_servers': os.environ['KAFKA_BROKERS']
     }
 
     @app.route('/')
@@ -134,13 +128,9 @@ def create_app(test_config=None):
                 cursor.execute('INSERT OR IGNORE INTO customer_state VALUES (?, ?)',
                                (mac_address, 'CHECKED_IN',))
                 conn.commit()
-            p = Producer(**conf)
-            p.produce(
-                f"{conf['sasl.username']}-{str(room_number)}",
-                json.dumps({'type': 'CONNECT', 'mac_address': mac_address}).encode('utf-8'),
-                mac_address
-            )
-            p.flush()
+            producer = KafkaProducer(**conf, value_serializer=lambda v: json.dumps(v).encode('utf-8'), key_serializer=str.encode)
+            producer.send(str(room_number), { 'type': 'CONNECT', 'mac_address': mac_address }, mac_address)
+            producer.flush()
         except KeyError:
             abort(400)
         except:
@@ -173,13 +163,9 @@ def create_app(test_config=None):
                 cursor.execute(
                     'DELETE FROM active_device WHERE room_number = ? AND mac_address = ?', (room_number, mac_address,))
                 conn.commit()
-            p = Producer(**conf)
-            p.produce(
-                f"{conf['sasl.username']}-{str(room_number)}",
-                json.dumps({'type': 'DISCONNECT', 'mac_address': mac_address}).encode('utf-8'),
-                mac_address
-            )
-            p.flush()
+            producer = KafkaProducer(**conf, value_serializer=lambda v: json.dumps(v).encode('utf-8'), key_serializer=str.encode)
+            producer.send(str(room_number), { 'type': 'DISCONNECT', 'mac_address': mac_address }, mac_address)
+            producer.flush()
         except KeyError:
             abort(400)
         except:
