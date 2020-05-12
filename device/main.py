@@ -68,7 +68,7 @@ if (len(sys.argv) != 2):
     sys.exit(2)
 
 client_socket=BluetoothSocket( RFCOMM )
-# arduino = serial.Serial('/dev/ttyACM0',9600)
+arduino = serial.Serial('/dev/ttyACM0',9600)
 
 
 time.sleep(2) 
@@ -87,7 +87,6 @@ while True:
     r = requests.get('http://hotel-of-things.herokuapp.com/rooms/' + sys.argv[1])
     message = r.json()
     try:
-      print(mac_address)
       if(len(message["devices"]) == 0):
         mac_address = None
       if message["devices"][0][1] == "CHECKED_IN":
