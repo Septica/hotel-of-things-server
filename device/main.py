@@ -4,7 +4,7 @@ import serial
 import time
 from threading import Thread
 from bluetooth import *
-from confluent_kafka import Consumer, KafkaException, KafkaError
+import requests
 
 global arduino
 
@@ -82,26 +82,15 @@ thread_read.start()
 thread_input_read.start()
 thread_bluetooth_read.start()
 thread_queue_consume.start()
-conf = {
-        'bootstrap.servers': os.environ['CLOUDKARAFKA_BROKERS'],
-        'group.id': "%s-consumer" % os.environ['CLOUDKARAFKA_USERNAME'],
-        'session.timeout.ms': 6000,
-        'default.topic.config': {'auto.offset.reset': 'smallest'},
-        'security.protocol': 'SASL_SSL',
-	'sasl.mechanisms': 'SCRAM-SHA-256',
-        'sasl.username': os.environ['CLOUDKARAFKA_USERNAME'],
-        'sasl.password': os.environ['CLOUDKARAFKA_PASSWORD']
-    }
-c = Consumer(**conf)
-c.subscribe([os.environ['CLOUDKARAFKA_USERNAME'] + "-200"])
+
 while True:
-    msg = c.poll(timeout=1)
-    if msg is None:
-        continue
-    if not msg.error():
-        message = json.loads(msg.value().decode())
-        print(message)
-        if message["type"] == "CONNECT":
-            mac_address = message["mac_address"]
-        elif message["type"] == "DISCONNECT":
-            mac_address = None
+    r = requests.get('http://hotel-of-things.herokuapp.com/rooms/' + sys.argv[1])
+    message = r.json()
+    try:
+      print(mac_address)
+      if(len(message["devices"]) == 0):
+        mac_address = None
+      if message["devices"][0][1] == "CHECKED_IN":
+          mac_address = message["devices"][0][0]
+    except:
+      pass
