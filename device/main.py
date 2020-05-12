@@ -7,9 +7,9 @@ from bluetooth import *
 import requests
 
 global arduino
+global mac_address
 
-
-def observer(queue, client_socket,mac_address):
+def observer(queue, client_socket):
     while True:
         if mac_address is None: continue
         arduino_input = arduino.readline().decode().rstrip()
@@ -74,7 +74,7 @@ arduino = serial.Serial('/dev/ttyACM0',9600)
 time.sleep(2) 
 queue = []
 mac_address = None
-thread_read = Thread(target=observer, args=(queue,client_socket,mac_address,))
+thread_read = Thread(target=observer, args=(queue,client_socket,))
 thread_input_read = Thread(target=user_input, args=(queue,))
 thread_bluetooth_read = Thread(target=bluetooth_observer, args=(queue,))
 thread_queue_consume = Thread(target=queue_consume, args=(queue,))
@@ -93,3 +93,4 @@ while True:
           mac_address = message["devices"][0][0]
     except:
       pass
+    time.sleep(1)
