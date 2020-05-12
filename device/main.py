@@ -93,13 +93,13 @@ conf = {
         'sasl.password': os.environ['CLOUDKARAFKA_PASSWORD']
     }
 c = Consumer(**conf)
-c.subscribe(["200"])
+c.subscribe([os.environ['CLOUDKARAFKA_USERNAME'] + "-200"])
 while True:
     msg = c.poll(timeout=1)
     if msg is None:
         continue
     if not msg.error():
-        message = msg.value
+        message = json.loads(msg.value().decode())
         print(message)
         if message["type"] == "CONNECT":
             mac_address = message["mac_address"]
